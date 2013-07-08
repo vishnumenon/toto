@@ -114,7 +114,7 @@ module Toto
           articles = Site.articles(@config[:ext]).reverse.map do |a|
             Article.new(a, @config)
           end
-          articles = articles.select {|a| a[:tags].include? route[1]}
+          articles = articles.select {|a| a[:tags].include? route[1].downcase}
           xml = Builder::XmlMarkup.new(:indent => 2)
           feedTemplate = File.read("#{Paths[:templates]}/feed.builder")
           instance_eval feedTemplate
