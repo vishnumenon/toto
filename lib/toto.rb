@@ -125,6 +125,8 @@ module Toto
         http 400
       end
 
+      puts "hi"
+      
       if route[0].downcase == "tag" then
               return :body => "hi" || "", :type => :xml, :status => 200
       end
