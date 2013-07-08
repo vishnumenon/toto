@@ -111,33 +111,13 @@ module Toto
         ################
 
         if route[0].downcase == "tag" then
-          @articles = Site.articles(@config[:ext]).reverse.map do |a|
+          articles = Site.articles(@config[:ext]).reverse.map do |a|
             Article.new(a, @config)
           end
+          articles = articles.select {|a| a[:tags].include? route[1]}
           xml = Builder::XmlMarkup.new(:indent => 2)
           feedTemplate = File.read("#{Paths[:templates]}/feed.builder")
-
-          xml.instruct!
-          xml.feed "xmlns" => "http://www.w3.org/2005/Atom" do
-            xml.title @config[:title]
-            xml.id @config[:url]
-            xml.updated articles.first[:date].iso8601 unless articles.empty?
-            xml.author { xml.name @config[:author] }
-
-            articles.reverse.each do |article|
-              xml.entry do
-                xml.title article.title
-                xml.link "rel" => "alternate", "href" => article.url
-                xml.id article.url
-                xml.published article[:date].iso8601
-                xml.updated article[:date].iso8601
-                xml.author { xml.name @config[:author] }
-                xml.summary article.summary, "type" => "html"
-                xml.content article.body, "type" => "html"
-              end
-            end
-          end
-
+          instance_eval feedTemplate
           return :body => xml.target!, :type => :xml, :status => 200
         end
 
