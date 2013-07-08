@@ -116,7 +116,7 @@ module Toto
           elsif route.first.casecmp("tag") == 0
             puts "Getting Tag Feed"
             xml = Builder::XmlMarkup.new(:indent => 2)
-            instance_eval File.read("#{Paths[:templates]}/index.builder")
+            return :body => "hi", :type => :xml, :status => 200
           elsif respond_to?(path)
             context[send(path, type), path.to_sym]
           elsif (repo = @config[:github][:repos].grep(/#{path}/).first) &&
