@@ -97,15 +97,17 @@ module Toto
       self[:root]
     end
 
+    def getTagArticles tag
+      as = Site.articles(@config[:ext]).reverse.map { |a| Article.new(a, @config) }
+      as = as.select { |x| x.tags.contains(tag) }
+      return as
+    end
+
     def go route, env = {}, type = :html
       route << self./ if route.empty?
         type, path = type =~ /html|xml|json/ ? type.to_sym : :html, route.join('/')
         context = lambda do |data, page|
           Context.new(data, @config, path, env).render(page, type)
-        end
-
-        contextXML = lambda do |data, page|
-          Context.new(data, @config, path, env).render(page, :xml)
         end
 
         body, status = if Context.new.respond_to?(:"to_#{type}")
@@ -119,8 +121,7 @@ module Toto
             end
           elsif route.first.casecmp("tag") == 0
             puts "Getting Tag Feed"
-            xml = Builder::XmlMarkup.new(:indent => 2)
-            contextXML[send(path,type), :index]
+            context[{articles => getTagArticles(path[1])}, :index]
           elsif respond_to?(path)
             context[send(path, type), path.to_sym]
           elsif (repo = @config[:github][:repos].grep(/#{path}/).first) &&
@@ -159,9 +160,7 @@ module Toto
 
         def initialize ctx = {}, config = {}, path = "/", env = {}
           @config, @context, @path, @env = config, ctx, path, env
-          @articles = Site.articles(@config[:ext]).reverse.map do |a|
-            Article.new(a, @config)
-          end
+          @articles = ctx.articles || Site.articles(@config[:ext]).reverse.map { |a| Article.new(a, @config) }
 
           ctx.each do |k, v|
             meta_def(k) { ctx.instance_of?(Hash) ? v : ctx.send(k) }
