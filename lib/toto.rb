@@ -106,14 +106,23 @@ module Toto
 
         puts "hi"
 
+        ################
+        # TAGS/FEEDS #######
+        ################
+
         if route[0].downcase == "tag" then
           @articles = Site.articles(@config[:ext]).reverse.map do |a|
             Article.new(a, @config)
           end
           xml = Builder::XmlMarkup.new(:indent => 2)
-          feedxml = instance_eval File.read("templates/feed.builder")
-          return :body => "<calculation>a1*b2</calculation>", :type => :xml, :status => 200
+          feedTemplate = File.read("#{Paths[:templates]}/feed.builder")
+          instance_eval feedTemplate
+          return :body => xml.target!, :type => :xml, :status => 200
         end
+
+        ################
+        # END TAGS ########
+        ################
 
         body, status = if Context.new.respond_to?(:"to_#{type}")
           if route.first =~ /\d{4}/
