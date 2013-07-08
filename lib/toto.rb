@@ -125,12 +125,13 @@ module Toto
         http 400
       end
 
-    rescue Errno::ENOENT => e
-      return :body => http(404).first, :type => :html, :status => 404
-    else
       if route[0].downcase == "tag" then
               return :body => "hi" || "", :type => :xml, :status => 200
       end
+
+    rescue Errno::ENOENT => e
+      return :body => http(404).first, :type => :html, :status => 404
+    else
       return :body => body || "", :type => type, :status => status || 200
     end
 
