@@ -80,11 +80,11 @@ module Toto
 
     def archives filter = ""
       entries = ! self.articles.empty??
-      self.articles.select do |a|
-        filter !~ /^\d{4}/ || File.basename(a) =~ /^#{filter}/
-      end.reverse.map do |article|
-        Article.new article, @config
-      end : []
+        self.articles.select do |a|
+          filter !~ /^\d{4}/ || File.basename(a) =~ /^#{filter}/
+        end.reverse.map do |article|
+          Article.new article, @config
+        end : []
 
       return :archives => Archives.new(entries, @config)
     end
@@ -97,150 +97,141 @@ module Toto
       self[:root]
     end
 
-    def getTagArticles tag
-      as = Site.articles(@config[:ext]).reverse.map { |a| Article.new(a, @config) }
-      as = as.select { |x| x[:tags].include?(tag) }
-      return as
-    end
-
     def go route, env = {}, type = :html
       route << self./ if route.empty?
-        type, path = type =~ /html|xml|json/ ? type.to_sym : :html, route.join('/')
-        context = lambda do |data, page|
-          Context.new(data, @config, path, env).render(page, type)
-        end
+      type, path = type =~ /html|xml|json/ ? type.to_sym : :html, route.join('/')
+      context = lambda do |data, page|
+        Context.new(data, @config, path, env).render(page, type)
+      end
 
-        contextXML = lambda do |data, page|
-          Context.new(data, @config, path, env).render(page, :xml)
-        end
-
-        body, status = if Context.new.respond_to?(:"to_#{type}")
-          if route.first =~ /\d{4}/
-            case route.size
+      body, status = if Context.new.respond_to?(:"to_#{type}")
+        if route.first =~ /\d{4}/
+          case route.size
             when 1..3
               context[archives(route * '-'), :archives]
             when 4
               context[article(route), :article]
             else http 400
-            end
-          elsif route.first.casecmp("tag") == 0
-            puts "Getting Tag Feed"
-            #context[{:articles => getTagArticles(path[1])}, :index]
-          elsif respond_to?(path)
-            context[send(path, type), path.to_sym]
-          elsif (repo = @config[:github][:repos].grep(/#{path}/).first) &&
-            !@config[:github][:user].empty?
-            context[Repo.new(repo, @config), :repo]
-          else
-            context[{}, path.to_sym]
           end
+        elsif respond_to?(path)
+          context[send(path, type), path.to_sym]
+        elsif (repo = @config[:github][:repos].grep(/#{path}/).first) &&
+              !@config[:github][:user].empty?
+          context[Repo.new(repo, @config), :repo]
         else
-          http 400
+          context[{}, path.to_sym]
         end
-
-      rescue Errno::ENOENT => e
-        return :body => http(404).first, :type => :html, :status => 404
       else
-        puts "hi"
-        return :body => body || "", :type => type, :status => status || 200
+        http 400
       end
 
-      protected
-
-      def http code
-        [@config[:error].call(code), code]
+    rescue Errno::ENOENT => e
+      return :body => http(404).first, :type => :html, :status => 404
+    else
+      if route[0].downcase == "tag" then
+              return :body => "hi" || "", :type => :xml, :status => 200
       end
-
-      def articles
-        self.class.articles self[:ext]
-      end
-
-      def self.articles ext
-        Dir["#{Paths[:articles]}/*.#{ext}"].sort_by {|entry| File.basename(entry) }
-      end
-
-      class Context
-        include Template
-        attr_reader :env
-
-        def initialize ctx = {}, config = {}, path = "/", env = {}
-          @config, @context, @path, @env = config, ctx, path, env
-          @articles = ctx[:articles] || Site.articles(@config[:ext]).reverse.map { |a| Article.new(a, @config) }
-
-          ctx.each do |k, v|
-            meta_def(k) { ctx.instance_of?(Hash) ? v : ctx.send(k) }
-          end
-        end
-
-        def title
-          @config[:title]
-        end
-
-        def render page, type
-          content = to_html page, @config
-          type == :html ? to_html(:layout, @config, &Proc.new { content }) : send(:"to_#{type}", page)
-        end
-
-        def to_xml page
-          xml = Builder::XmlMarkup.new(:indent => 2)
-          instance_eval File.read("#{Paths[:templates]}/#{page}.builder")
-        end
-        alias :to_atom to_xml
-
-        def method_missing m, *args, &blk
-          @context.respond_to?(m) ? @context.send(m, *args, &blk) : super
-        end
-      end
+      return :body => body || "", :type => type, :status => status || 200
     end
 
-    class Repo < Hash
-      include Template
+  protected
 
-      README = "https://github.com/%s/%s/raw/master/README.%s"
-
-      def initialize name, config
-        self[:name], @config = name, config
-      end
-
-      def readme
-        markdown open(README %
-          [@config[:github][:user], self[:name], @config[:github][:ext]]).read
-      rescue Timeout::Error, OpenURI::HTTPError => e
-        "This page isn't available."
-      end
-      alias :content readme
+    def http code
+      [@config[:error].call(code), code]
     end
 
-    class Archives < Array
-      include Template
-
-      def initialize articles, config
-        self.replace articles
-        @config = config
-      end
-
-      def [] a
-        a.is_a?(Range) ? self.class.new(self.slice(a) || [], @config) : super
-      end
-
-      def to_html
-        super(:archives, @config)
-      end
-      alias :to_s to_html
-      alias :archive archives
+    def articles
+      self.class.articles self[:ext]
     end
 
-    class Article < Hash
-      include Template
+    def self.articles ext
+      Dir["#{Paths[:articles]}/*.#{ext}"].sort_by {|entry| File.basename(entry) }
+    end
 
-      def initialize obj, config = {}
-        @obj, @config = obj, config
-        self.load if obj.is_a? Hash
+    class Context
+      include Template
+      attr_reader :env
+
+      def initialize ctx = {}, config = {}, path = "/", env = {}
+        @config, @context, @path, @env = config, ctx, path, env
+        @articles = Site.articles(@config[:ext]).reverse.map do |a|
+          Article.new(a, @config)
+        end
+
+        ctx.each do |k, v|
+          meta_def(k) { ctx.instance_of?(Hash) ? v : ctx.send(k) }
+        end
       end
 
-      def load
-        data = if @obj.is_a? String
-          meta, self[:body] = File.read(@obj).split(/\n\n/, 2)
+      def title
+        @config[:title]
+      end
+
+      def render page, type
+        content = to_html page, @config
+        type == :html ? to_html(:layout, @config, &Proc.new { content }) : send(:"to_#{type}", page)
+      end
+
+      def to_xml page
+        xml = Builder::XmlMarkup.new(:indent => 2)
+        instance_eval File.read("#{Paths[:templates]}/#{page}.builder")
+      end
+      alias :to_atom to_xml
+
+      def method_missing m, *args, &blk
+        @context.respond_to?(m) ? @context.send(m, *args, &blk) : super
+      end
+    end
+  end
+
+  class Repo < Hash
+    include Template
+
+    README = "https://github.com/%s/%s/raw/master/README.%s"
+
+    def initialize name, config
+      self[:name], @config = name, config
+    end
+
+    def readme
+      markdown open(README %
+        [@config[:github][:user], self[:name], @config[:github][:ext]]).read
+    rescue Timeout::Error, OpenURI::HTTPError => e
+      "This page isn't available."
+    end
+    alias :content readme
+  end
+
+  class Archives < Array
+    include Template
+
+    def initialize articles, config
+      self.replace articles
+      @config = config
+    end
+
+    def [] a
+      a.is_a?(Range) ? self.class.new(self.slice(a) || [], @config) : super
+    end
+
+    def to_html
+      super(:archives, @config)
+    end
+    alias :to_s to_html
+    alias :archive archives
+  end
+
+  class Article < Hash
+    include Template
+
+    def initialize obj, config = {}
+      @obj, @config = obj, config
+      self.load if obj.is_a? Hash
+    end
+
+    def load
+      data = if @obj.is_a? String
+        meta, self[:body] = File.read(@obj).split(/\n\n/, 2)
 
         # use the date from the filename, or else toto won't find the article
         @obj =~ /\/(\d{4}-\d{2}-\d{2})[^\/]*$/
@@ -288,14 +279,14 @@ module Toto
     end
 
     def title()   self[:title] || "an article"               end
-      def date()    @config[:date].call(self[:date])           end
-        def author()  self[:author] || @config[:author]          end
-          def to_html() self.load; super(:article, @config)        end
-          alias :to_s to_html
-        end
+    def date()    @config[:date].call(self[:date])           end
+    def author()  self[:author] || @config[:author]          end
+    def to_html() self.load; super(:article, @config)        end
+    alias :to_s to_html
+  end
 
-        class Config < Hash
-          Defaults = {
+  class Config < Hash
+    Defaults = {
       :author => ENV['USER'],                               # blog author
       :title => Dir.pwd.split('/').last,                    # site title
       :root => "index",                                     # site index
@@ -310,7 +301,7 @@ module Toto
       :github => {:user => "", :repos => [], :ext => 'md'}, # Github username and list of repos
       :to_html => lambda {|path, page, ctx|                 # returns an html, from a path & context
         ERB.new(File.read("#{path}/#{page}.rhtml")).result(ctx)
-        },
+      },
       :error => lambda {|code|                              # The HTML for your error page
         "<font style='font-size:300%'>toto, we're not in Kansas anymore (#{code})</font>"
       }
@@ -367,4 +358,3 @@ module Toto
     end
   end
 end
-
