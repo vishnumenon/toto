@@ -106,9 +106,9 @@ module Toto
 
         puts "hi"
 
-        ################
-        # TAGS/FEEDS #######
-        ################
+        #################
+        # TAGS/FEEDS ########
+        #################
 
         if route[0].downcase == "tag" then
           articles = Site.articles(@config[:ext]).reverse.map do |a|
@@ -121,9 +121,9 @@ module Toto
           return :body => xml.target!, :type => :xml, :status => 200
         end
 
-        ################
-        # END TAGS ########
-        ################
+        #################
+        # END TAGS #########
+        #################
 
         body, status = if Context.new.respond_to?(:"to_#{type}")
           if route.first =~ /\d{4}/
