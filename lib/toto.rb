@@ -111,7 +111,7 @@ module Toto
         ################
 
         if route[0].downcase == "tag" then
-          articles = Site.articles(@config[:ext]).reverse.map do |a|
+          @articles = Site.articles(@config[:ext]).reverse.map do |a|
             Article.new(a, @config)
           end
           xml = Builder::XmlMarkup.new(:indent => 2)
