@@ -121,7 +121,7 @@ module Toto
             end
           elsif route.first.casecmp("tag") == 0
             puts "Getting Tag Feed"
-            context[{articles => getTagArticles(path[1])}, :index]
+            context[{:articles => getTagArticles(path[1])}, :index]
           elsif respond_to?(path)
             context[send(path, type), path.to_sym]
           elsif (repo = @config[:github][:repos].grep(/#{path}/).first) &&
@@ -160,7 +160,7 @@ module Toto
 
         def initialize ctx = {}, config = {}, path = "/", env = {}
           @config, @context, @path, @env = config, ctx, path, env
-          @articles = ctx.articles || Site.articles(@config[:ext]).reverse.map { |a| Article.new(a, @config) }
+          @articles = ctx[:articles] || Site.articles(@config[:ext]).reverse.map { |a| Article.new(a, @config) }
 
           ctx.each do |k, v|
             meta_def(k) { ctx.instance_of?(Hash) ? v : ctx.send(k) }
