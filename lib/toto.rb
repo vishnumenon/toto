@@ -110,6 +110,10 @@ module Toto
           Context.new(data, @config, path, env).render(page, type)
         end
 
+        contextXML = lambda do |data, page|
+          Context.new(data, @config, path, env).render(page, :xml)
+        end
+
         body, status = if Context.new.respond_to?(:"to_#{type}")
           if route.first =~ /\d{4}/
             case route.size
@@ -121,7 +125,7 @@ module Toto
             end
           elsif route.first.casecmp("tag") == 0
             puts "Getting Tag Feed"
-            context[{:articles => getTagArticles(path[1])}, :index]
+            #context[{:articles => getTagArticles(path[1])}, :index]
           elsif respond_to?(path)
             context[send(path, type), path.to_sym]
           elsif (repo = @config[:github][:repos].grep(/#{path}/).first) &&
@@ -137,6 +141,7 @@ module Toto
       rescue Errno::ENOENT => e
         return :body => http(404).first, :type => :html, :status => 404
       else
+        puts "hi"
         return :body => body || "", :type => type, :status => status || 200
       end
 
