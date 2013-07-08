@@ -114,8 +114,8 @@ module Toto
             else http 400
             end
           elsif route.first.casecmp("tag") == 0
-            puts "hello world tags"
-            context[feed(route), :feed]
+            puts "Getting Tag Feed"
+            instance_eval File.read("#{Paths[:templates]}/index.builder")
           elsif respond_to?(path)
             context[send(path, type), path.to_sym]
           elsif (repo = @config[:github][:repos].grep(/#{path}/).first) &&

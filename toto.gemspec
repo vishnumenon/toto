@@ -5,7 +5,7 @@
 
 Gem::Specification.new do |s|
   s.name = %q{toto}
-  s.version = "0.4.92"
+  s.version = "0.4.92a"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["cloudhead"]
