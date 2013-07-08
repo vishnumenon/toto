@@ -104,6 +104,12 @@ module Toto
         Context.new(data, @config, path, env).render(page, type)
       end
 
+     puts "hi"
+
+      if route[0].downcase == "tag" then
+              return :body => "hi" || "", :type => :xml, :status => 200
+      end
+
       body, status = if Context.new.respond_to?(:"to_#{type}")
         if route.first =~ /\d{4}/
           case route.size
@@ -123,12 +129,6 @@ module Toto
         end
       else
         http 400
-      end
-
-      puts "hi"
-      
-      if route[0].downcase == "tag" then
-              return :body => "hi" || "", :type => :xml, :status => 200
       end
 
     rescue Errno::ENOENT => e
