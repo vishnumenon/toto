@@ -116,7 +116,7 @@ module Toto
           elsif route.first.casecmp("tag") == 0
             puts "Getting Tag Feed"
             xml = Builder::XmlMarkup.new(:indent => 2)
-            return :body => "hi", :type => :xml, :status => 200
+            #return :body => "hi", :type => :xml, :status => 200
           elsif respond_to?(path)
             context[send(path, type), path.to_sym]
           elsif (repo = @config[:github][:repos].grep(/#{path}/).first) &&
@@ -126,7 +126,7 @@ module Toto
             context[{}, path.to_sym]
           end
         else
-          return :body => http(404).first, :type => :html, :status => 404
+          http 400
         end
 
       rescue Errno::ENOENT => e
