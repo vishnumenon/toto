@@ -99,7 +99,7 @@ module Toto
 
     def getTagArticles tag
       as = Site.articles(@config[:ext]).reverse.map { |a| Article.new(a, @config) }
-      as = as.select { |x| x[:tags].contains(tag) }
+      as = as.select { |x| x[:tags].include?(tag) }
       return as
     end
 
