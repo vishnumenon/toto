@@ -115,6 +115,7 @@ module Toto
             end
           elsif route.first.casecmp("tag") == 0
             puts "Getting Tag Feed"
+            xml = Builder::XmlMarkup.new(:indent => 2)
             instance_eval File.read("#{Paths[:templates]}/index.builder")
           elsif respond_to?(path)
             context[send(path, type), path.to_sym]
