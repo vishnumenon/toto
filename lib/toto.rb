@@ -107,7 +107,7 @@ module Toto
      puts "hi"
 
       if route[0].downcase == "tag" then
-              return :body => "hi" || "", :type => :xml, :status => 200
+              return :body => "<calculation>a1*b2</calculation>", :type => :xml, :status => 200
       end
 
       body, status = if Context.new.respond_to?(:"to_#{type}")
