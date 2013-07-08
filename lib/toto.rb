@@ -111,7 +111,7 @@ module Toto
             Article.new(a, @config)
           end
           xml = Builder::XmlMarkup.new(:indent => 2)
-          #instance_eval File.read("#{Paths[:templates]}/feed.builder")
+          feedxml = instance_eval File.read("templates/feed.builder")
           return :body => "<calculation>a1*b2</calculation>", :type => :xml, :status => 200
         end
 
