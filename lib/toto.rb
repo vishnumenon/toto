@@ -126,7 +126,7 @@ module Toto
             context[{}, path.to_sym]
           end
         else
-          http 400
+          return :body => http(404).first, :type => :html, :status => 404
         end
 
       rescue Errno::ENOENT => e
